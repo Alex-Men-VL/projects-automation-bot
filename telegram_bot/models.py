@@ -161,12 +161,6 @@ class Team(models.Model):
         on_delete=models.CASCADE,
         null=True
     )
-    product_manager = models.OneToOneField(
-        ProductManager,
-        verbose_name='продукт-менеджер',
-        related_name='team',
-        on_delete=models.CASCADE,
-    )
     time = models.OneToOneField(
         Time,
         verbose_name='временной интервал',
