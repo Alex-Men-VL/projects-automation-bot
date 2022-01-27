@@ -33,6 +33,10 @@ def sort():
             'time': student_times
         }
         students.append(student)
-        print(student)
+
+    students = sorted(students, key=lambda item: (item['level'], item['time']))
 
     return students
+
+# def get_beginners():
+# std = Participant.objects.filter(student__pk=1)
