@@ -2,14 +2,14 @@
       "PM": [
                   {
                         "name": "Тим",
-                        "tg_username": "@gtimg",
-                        "discord_username": "@gtimg_discord",
+                        "tg_username": "gtimg",
+                        "discord_username": "gtimg_discord",
                         "time_slots": ["18:00", "18:30", "19:00", "19:30", "20:00"]
                   },
                   {
                         "name": "Катя",
-                        "tg_username": "@Eka_Kve",
-                        "discord_username": "@Eka_Kve_discord",
+                        "tg_username": "Eka_Kve",
+                        "discord_username": "Eka_Kve_discord",
                         "time_slots": ["19:00", "19:30", "20:00", "20:30", "21:00"]
                   }
             ],
@@ -17,20 +17,111 @@
                   {
                         "name": "Александр Попов",
                         "level": "junior",
-                        "tg_username": "@example",
+                        "tg_username": "example",
                         "discord_username": "example#1234"
                   },
                   {
                         "name": "Иван Петров",
                         "level": "novice+",
-                        "tg_username": "@example2",
+                        "tg_username": "example2",
                         "discord_username": "example2#4321"
                   },
                   {
                         "name": "Александр Меньшиков",
                         "level": "junior",
-                        "tg_username": "@ym_n1k",
+                        "tg_username": "ym_n1k",
                         "discord_username": "example3#4761"
+                  },
+                  {
+                        "name": "Анна Молчанова",
+                        "level": "junior",
+                        "tg_username": "annfike",
+                        "discord_username": "example3#4768"
+                  },
+                  {
+                        "name": "Константин Пиалов",
+                        "level": "junior",
+                        "tg_username": "proprosh",
+                        "discord_username": "example3#4769"
+                  },
+                  {
+                        "name": "Тим",
+                        "level": "junior",
+                        "tg_username": "gtimg",
+                        "discord_username": "gtimg_discord"
+                  },
+                  {
+                        "name": "Иван Иванов",
+                        "level": "novice",
+                        "tg_username": "example3",
+                        "discord_username": "example3_discord"
+                  },
+                  {
+                        "name": "Петр Петров",
+                        "level": "novice",
+                        "tg_username": "example4",
+                        "discord_username": "example4_discord"
+                  },
+                  {
+                        "name": "Сидр Сидоров",
+                        "level": "novice",
+                        "tg_username": "example5",
+                        "discord_username": "example5_discord"
+                  },
+                  {
+                        "name": "Антон Чехов",
+                        "level": "novice+",
+                        "tg_username": "example6",
+                        "discord_username": "example6_discord"
+                  },
+                  {
+                        "name": "Александр Пушкин",
+                        "level": "novice+",
+                        "tg_username": "example7",
+                        "discord_username": "example7_discord"
+                  },
+                  {
+                        "name": "Лев Толстой",
+                        "level": "novice",
+                        "tg_username": "example8",
+                        "discord_username": "example8_discord"
+                  },
+                  {
+                        "name": "Федор Достоевский",
+                        "level": "novice",
+                        "tg_username": "example9",
+                        "discord_username": "example9_discord"
+                  },
+                  {
+                        "name": "Николай Гоголь",
+                        "level": "novice",
+                        "tg_username": "example10",
+                        "discord_username": "example10_discord"
+                  },
+                  {
+                        "name": "Иван Тургенев",
+                        "level": "novice",
+                        "tg_username": "example11",
+                        "discord_username": "example11_discord"
+                  },
+                  {
+                        "name": "Михаил Лермонтов",
+                        "level": "novice+",
+                        "tg_username": "example12",
+                        "discord_username": "example12_discord"
+                  },
+                  {
+                        "name": "Михаил Булгаков",
+                        "level": "novice+",
+                        "tg_username": "example13",
+                        "discord_username": "example13_discord"
+                  },
+                  {
+                        "name": "Александр Дюма",
+                        "level": "novice+",
+                        "tg_username": "example14",
+                        "discord_username": "example14_discord"
                   }
+
             ]
 }
