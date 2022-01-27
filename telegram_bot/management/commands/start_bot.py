@@ -24,7 +24,7 @@ def start_bot():
         tg_token,
         {
             'START': start,
-            'FIRST_INTERVAL': handle_poll_answer,
+            'HANDLE_POLL': handle_poll_answer,
         }
     )
     bot.updater.start_polling()

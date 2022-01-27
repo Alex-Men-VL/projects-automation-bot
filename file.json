@@ -25,6 +25,12 @@
                         "level": "novice+",
                         "tg_username": "@example2",
                         "discord_username": "example2#4321"
+                  },
+                  {
+                        "name": "Александр Меньшиков",
+                        "level": "junior",
+                        "tg_username": "@ym_n1k",
+                        "discord_username": "example3#4761"
                   }
             ]
 }
