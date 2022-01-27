@@ -102,14 +102,14 @@ def start(update, context):
             context.job_queue.run_monthly(
                 send_poll_with_times,
                 time(17, 0, 0),
-                day=11,
+                day=13,
                 context={'chat_id': chat_id,
                          'time_intervals': context.bot_data['time_intervals']},
                 name=context.user_data['username'])
             context.job_queue.run_monthly(
                 send_notification,
                 time(17, 0, 0),
-                day=14,
+                day=17,
                 context={'chat_id': chat_id, 'student': student},
                 name=f'{context.user_data["username"]} notification'
             )'''
@@ -150,25 +150,24 @@ def handle_poll_answer(update, context):
         team = add_participant_in_team(participant, answers[0],
                                        poll_options)
 
-    if team:
-        team_time = team.time.time_interval.strftime('%H:%M')
-        message = static_text.success_message.format(time=team_time)
-        context.bot.send_message(
-            chat_id,
-            message,
-            reply_markup=None
-        )
-    else:
-        message = static_text.unsuccessful_message
-        context.bot.send_message(
-            chat_id,
-            message
-        )
-        context.job_queue.run_once(
-            send_notification,
-            when=1,
-            context={'chat_id': chat_id, 'student': student},
-            name=f'{context.user_data["username"]} notification'
-        )
+        if team:
+            team_time = team.time.time_interval.strftime('%H:%M')
+            message = static_text.success_message.format(time=team_time)
+            context.bot.send_message(
+                chat_id,
+                message,
+                reply_markup=None
+            )
+        else:
+            message = static_text.unsuccessful_message
+            context.bot.send_message(
+                chat_id,
+                message
+            )
+            context.job_queue.run_once(
+                send_notification,
+                when=1,
+                context={'chat_id': chat_id, 'student': student},
+                name=f'{context.user_data["username"]} notification'
+            )
     return 'HANDLE_POLL'
-
