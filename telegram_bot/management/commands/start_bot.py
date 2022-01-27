@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.management import BaseCommand
 
 from telegram_bot.tg_automation import (
-    TgBot,
+    handle_poll_answer, TgBot,
     start,
 )
 
@@ -24,6 +24,7 @@ def start_bot():
         tg_token,
         {
             'START': start,
+            'FIRST_INTERVAL': handle_poll_answer,
         }
     )
     bot.updater.start_polling()

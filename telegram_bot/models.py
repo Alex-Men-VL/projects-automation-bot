@@ -76,12 +76,13 @@ class Time(models.Model):
         on_delete=models.CASCADE
     )
     time_interval = models.TimeField(
-        'промежуток времени'
+        'начало промежутка времени'
     )
 
     class Meta:
         verbose_name = 'промежуток времени',
         verbose_name_plural = 'промежутки времени'
+        ordering = ('pm__name', 'time_interval')
 
     def __str__(self):
         return f'{self.pm.name} {self.time_interval}'
@@ -138,7 +139,7 @@ class Participant(models.Model):
     times = models.ManyToManyField(
         Time,
         verbose_name='выбранное время',
-        related_name='participants'
+        related_name='participants',
     )
 
     class Meta:
@@ -146,7 +147,7 @@ class Participant(models.Model):
         verbose_name_plural = 'участники'
 
     def __str__(self):
-        return f'{self.student.name}'
+        return f'{self.student.name} {self.student.tg_username}'
 
 
 class Team(models.Model):
@@ -174,5 +175,3 @@ class Team(models.Model):
 
     def __str__(self):
         return f'{self.title}'
-
-
