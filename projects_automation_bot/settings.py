@@ -42,9 +42,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+<<<<<<< HEAD
 
     # 'django_extensions',
 
+=======
+>>>>>>> 9c9c2acbb7ad61ad5e3ed3132fa9ae9106bd3acf
     'telegram_bot.apps.TelegramBotConfig',
     # 'telegram_bot'
 ]

@@ -1,0 +1,30 @@
+{
+      "PM": [
+                  {
+                        "name": "Тим",
+                        "tg_username": "@gtimg",
+                        "discord_username": "@gtimg_discord",
+                        "time_slots": ["18:00", "18:30", "19:00", "19:30", "20:00"]
+                  },
+                  {
+                        "name": "Катя",
+                        "tg_username": "@Eka_Kve",
+                        "discord_username": "@Eka_Kve_discord",
+                        "time_slots": ["19:00", "19:30", "20:00", "20:30", "21:00"]
+                  }
+            ],
+      "Student": [
+                  {
+                        "name": "Александр Попов",
+                        "level": "junior",
+                        "tg_username": "@example",
+                        "discord_username": "example#1234"
+                  },
+                  {
+                        "name": "Иван Петров",
+                        "level": "novice+",
+                        "tg_username": "@example2",
+                        "discord_username": "example2#4321"
+                  }
+            ]
+}
