@@ -125,7 +125,6 @@ def handle_poll(update, context):
         student=student,
         project=project
     )
-    print(update)
     if update.poll_answer and update.poll_answer.option_ids:
         return handle_poll_answer(update, context, participant, created)
 
@@ -197,8 +196,10 @@ def change_participant_time(update, context):
                 context.job_queue.run_once(
                     send_poll_with_times,
                     when=1,
-                    context={'chat_id': student.chat_id,
-                             'time_intervals': context.bot_data['time_intervals']},
+                    context={
+                        'chat_id': student.chat_id,
+                        'time_intervals': context.bot_data['time_intervals']
+                    },
                     name=context.user_data['username'])
             else:
                 message = static_text.change_time_late_message
