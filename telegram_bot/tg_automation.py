@@ -58,6 +58,9 @@ class TgBot:
         self.updater.dispatcher.add_handler(
             CommandHandler('start', get_user(self.handle_users_reply))
         )
+        self.updater.dispatcher.add_handler(
+            CommandHandler('change_time', get_user(self.handle_users_reply))
+        )
 
     def handle_users_reply(self, update, context):
         user = context.user_data.get('student') or context.user_data.get('pm')
@@ -74,6 +77,8 @@ class TgBot:
             return
         if user_reply == '/start':
             user_state = 'START'
+        elif user_reply == '/change_time':
+            user_state = 'CHANGE_TIME'
         else:
             user_state = user.bot_state
             user_state = user_state if user_state else 'HANDLE_POLL'
@@ -108,6 +113,8 @@ def start(update, context):
                                  reply_markup=ReplyKeyboardRemove())
         install_first_week_job(context, student, chat_id)
         return 'HANDLE_POLL'
+    elif pm := context.user_data.get('pm'):
+        pass
 
 
 @transaction.atomic
@@ -118,11 +125,19 @@ def handle_poll(update, context):
         student=student,
         project=project
     )
+    print(update)
     if update.poll_answer and update.poll_answer.option_ids:
-        handle_poll_answer(update, context, participant, created)
+        return handle_poll_answer(update, context, participant, created)
 
+    if update.poll_answer and not update.poll_answer.option_ids:
+        context.bot.send_message(
+            context.user_data['chat_id'],
+            'СТОП!',  # FIXME
+            reply_markup=ReplyKeyboardRemove()
+        )
+        return 'HANDLE_POLL'
     if update.message and (answer := update.message.text):
-        handle_poll_message(context, participant, answer)
+        return handle_poll_message(context, participant, answer)
 
 
 def handle_poll_answer(update, context, participant, created):
@@ -135,12 +150,6 @@ def handle_poll_answer(update, context, participant, created):
         add_participant_selected_times(participant, answers, poll_options)
     elif answers:
         send_poll_report(context, participant, answers, poll_options, chat_id)
-    else:
-        context.bot.send_message(
-            chat_id,
-            'СТОП!',  # FIXME
-            reply_markup=ReplyKeyboardRemove()
-        )
     return 'HANDLE_POLL'
 
 
@@ -148,6 +157,7 @@ def handle_poll_message(context, participant, answer):
     chat_id = context.user_data['chat_id']
     poll_options = context.bot_data['time_intervals']
     send_poll_report(context, participant, [answer], poll_options, chat_id)
+    return 'HANDLE_POLL'
 
 
 def send_poll_report(context, participant, answers, poll_options, chat_id):
@@ -173,3 +183,33 @@ def send_poll_report(context, participant, answers, poll_options, chat_id):
             context={'chat_id': chat_id, 'student': participant.student},
             name=f'{context.user_data["username"]} notification'
         )
+
+
+def change_participant_time(update, context):
+    if student := context.user_data.get('student'):
+        participant = Participant.objects.filter(
+            project=Project.objects.last()
+        ).filter(student=student)
+        if participant.exists():
+            participant = participant[0]
+            if not participant.team:
+                participant.delete()
+                context.job_queue.run_once(
+                    send_poll_with_times,
+                    when=1,
+                    context={'chat_id': student.chat_id,
+                             'time_intervals': context.bot_data['time_intervals']},
+                    name=context.user_data['username'])
+            else:
+                message = static_text.change_time_late_message
+                context.bot.send_message(
+                    student.chat_id,
+                    message
+                )
+        else:
+            message = static_text.unsuccessful_change_time_message
+            context.bot.send_message(
+                student.chat_id,
+                message
+            )
+        return 'HANDLE_POLL'
