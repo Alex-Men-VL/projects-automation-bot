@@ -61,6 +61,9 @@ class TgBot:
         self.updater.dispatcher.add_handler(
             CommandHandler('change_time', get_user(self.handle_users_reply))
         )
+        self.updater.dispatcher.add_handler(
+            CommandHandler('help', self.help_handler)
+        )
 
     def handle_users_reply(self, update, context):
         user = context.user_data.get('student') or context.user_data.get('pm')
@@ -101,6 +104,9 @@ class TgBot:
     def update_bot_data(self, context):
         bot_data = context.bot_data
         bot_data['time_intervals'] = get_time_intervals()
+
+    def help_handler(self, update, context):
+        update.message.reply_text(static_text.help_message)
 
 
 def start(update, context):
