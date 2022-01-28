@@ -22,6 +22,11 @@ class User(models.Model):
         blank=True,
         null=True
     )
+    chat_id = models.IntegerField(
+        'Chat ID в Telegram',
+        null=True,
+        blank=True
+    )
 
     class Meta:
         abstract = True

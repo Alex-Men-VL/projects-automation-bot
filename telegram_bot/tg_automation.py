@@ -1,9 +1,8 @@
-from datetime import time  # Не удалять
-
 from django.db import transaction
+from telegram import ReplyKeyboardRemove
 from telegram.ext import (
     CommandHandler,
-    PollAnswerHandler,
+    Filters, MessageHandler, PollAnswerHandler,
     Updater
 )
 
@@ -12,7 +11,8 @@ from .models import Participant, ProductManager, Project, Student
 from .tg_utils import (
     add_participant_in_team, add_participant_selected_times,
     get_time_intervals,
-    send_notification, send_poll_with_times
+    install_first_week_job, install_second_week_job, send_notification,
+    send_poll_with_times
 )
 
 
@@ -51,7 +51,22 @@ class TgBot:
             PollAnswerHandler(get_user(self.handle_users_reply))
         )
         self.updater.dispatcher.add_handler(
+            MessageHandler(Filters.text & ~Filters.command & Filters.regex(
+                r'[0-9]{2}:[0, 3]0-[0-9]{2}:[0, 3]0'
+            ), get_user(self.handle_users_reply))
+        )
+        self.updater.dispatcher.add_handler(
+            MessageHandler(Filters.text & ~Filters.command,
+                           self.handle_unregistered_message)
+        )
+        self.updater.dispatcher.add_handler(
             CommandHandler('start', get_user(self.handle_users_reply))
+        )
+        self.updater.dispatcher.add_handler(
+            CommandHandler('change_time', get_user(self.handle_users_reply))
+        )
+        self.updater.dispatcher.add_handler(
+            CommandHandler('help', self.help_handler)
         )
 
     def handle_users_reply(self, update, context):
@@ -69,6 +84,8 @@ class TgBot:
             return
         if user_reply == '/start':
             user_state = 'START'
+        elif user_reply == '/change_time':
+            user_state = 'CHANGE_TIME'
         else:
             user_state = user.bot_state
             user_state = user_state if user_state else 'HANDLE_POLL'
@@ -79,6 +96,7 @@ class TgBot:
 
         state_handler = self.states_functions[user_state]
         next_state = state_handler(update, context)
+        user.chat_id = chat_id
         user.bot_state = next_state
         user.save()
 
@@ -91,55 +109,52 @@ class TgBot:
         bot_data = context.bot_data
         bot_data['time_intervals'] = get_time_intervals()
 
+    def help_handler(self, update, context):
+        update.message.reply_text(static_text.help_message)
+
+    def handle_unregistered_message(self, update, context):
+        update.message.reply_text(static_text.unregistered_message)
+
 
 def start(update, context):
+    install_second_week_job(context)
+
     chat_id = update.message.chat_id
     if student := context.user_data.get('student'):
         message = static_text.start_message
-        context.bot.send_message(chat_id, message, reply_markup=None)
-        if context.user_data.get('student'):
-            '''Раскомментировать на продакшене
-            context.job_queue.run_monthly(
-                send_poll_with_times,
-                time(17, 0, 0),
-                day=13,
-                context={'chat_id': chat_id,
-                         'time_intervals': context.bot_data['time_intervals']},
-                name=context.user_data['username'])
-            context.job_queue.run_monthly(
-                send_notification,
-                time(17, 0, 0),
-                day=17,
-                context={'chat_id': chat_id, 'student': student},
-                name=f'{context.user_data["username"]} notification'
-            )'''
-
-            # Закомментировать на продакшене
-            context.job_queue.run_once(
-                send_poll_with_times,
-                when=2,
-                context={'chat_id': chat_id,
-                         'time_intervals': context.bot_data['time_intervals']},
-                name=context.user_data['username'],
-            )
-            context.job_queue.run_once(
-                send_notification,
-                when=5,
-                context={'chat_id': chat_id, 'student': student},
-                name=f'{context.user_data["username"]} notification'
-            )
+        context.bot.send_message(chat_id, message,
+                                 reply_markup=ReplyKeyboardRemove())
+        install_first_week_job(context, student, chat_id)
         return 'HANDLE_POLL'
+    elif pm := context.user_data.get('pm'):
+        pass
 
 
 @transaction.atomic
-def handle_poll_answer(update, context):
+def handle_poll(update, context):
     student = context.user_data['student']
-    chat_id = context.user_data['chat_id']
     project = Project.objects.last()
     participant, created = Participant.objects.get_or_create(
         student=student,
         project=project
     )
+    if update.poll_answer and update.poll_answer.option_ids:
+        return handle_poll_answer(update, context, participant, created)
+
+    if update.poll_answer and not update.poll_answer.option_ids:
+        message = static_text.warning_message
+        context.bot.send_message(
+            context.user_data['chat_id'],
+            message,
+            reply_markup=ReplyKeyboardRemove()
+        )
+        return 'HANDLE_POLL'
+    if update.message and (answer := update.message.text):
+        return handle_poll_message(context, participant, answer)
+
+
+def handle_poll_answer(update, context, participant, created):
+    chat_id = context.user_data['chat_id']
     poll_options = context.bot_data['time_intervals']
     answers = [time_interval for time_id, time_interval in
                enumerate(poll_options) if time_id in
@@ -147,27 +162,69 @@ def handle_poll_answer(update, context):
     if created:
         add_participant_selected_times(participant, answers, poll_options)
     elif answers:
-        team = add_participant_in_team(participant, answers[0],
-                                       poll_options)
+        send_poll_report(context, participant, answers, poll_options, chat_id)
+    return 'HANDLE_POLL'
 
-        if team:
-            team_time = team.time.time_interval.strftime('%H:%M')
-            message = static_text.success_message.format(time=team_time)
-            context.bot.send_message(
-                chat_id,
-                message,
-                reply_markup=None
-            )
+
+def handle_poll_message(context, participant, answer):
+    chat_id = context.user_data['chat_id']
+    poll_options = context.bot_data['time_intervals']
+    send_poll_report(context, participant, [answer], poll_options, chat_id)
+    return 'HANDLE_POLL'
+
+
+def send_poll_report(context, participant, answers, poll_options, chat_id):
+    team = add_participant_in_team(participant, answers[0], poll_options)
+
+    if team:
+        team_time = team.time.time_interval.strftime('%H:%M')
+        message = static_text.success_message.format(time=team_time)
+        context.bot.send_message(
+            chat_id,
+            message,
+            reply_markup=ReplyKeyboardRemove()
+        )
+    else:
+        message = static_text.unsuccessful_message
+        context.bot.send_message(
+            chat_id,
+            message
+        )
+        context.job_queue.run_once(
+            send_notification,
+            when=1,
+            context={'chat_id': chat_id, 'student': participant.student},
+            name=f'{context.user_data["username"]} notification'
+        )
+
+
+def change_participant_time(update, context):
+    if student := context.user_data.get('student'):
+        participant = Participant.objects.filter(
+            project=Project.objects.last()
+        ).filter(student=student)
+        if participant.exists():
+            participant = participant[0]
+            if not participant.team:
+                participant.delete()
+                context.job_queue.run_once(
+                    send_poll_with_times,
+                    when=1,
+                    context={
+                        'chat_id': student.chat_id,
+                        'time_intervals': context.bot_data['time_intervals']
+                    },
+                    name=context.user_data['username'])
+            else:
+                message = static_text.change_time_late_message
+                context.bot.send_message(
+                    student.chat_id,
+                    message
+                )
         else:
-            message = static_text.unsuccessful_message
+            message = static_text.unsuccessful_change_time_message
             context.bot.send_message(
-                chat_id,
+                student.chat_id,
                 message
             )
-            context.job_queue.run_once(
-                send_notification,
-                when=1,
-                context={'chat_id': chat_id, 'student': student},
-                name=f'{context.user_data["username"]} notification'
-            )
-    return 'HANDLE_POLL'
+        return 'HANDLE_POLL'
