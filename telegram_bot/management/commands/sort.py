@@ -1,31 +1,30 @@
 import logging
+from django import test
 from django.core.management import BaseCommand
 from telegram_bot.models import Participant, Team
 
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        try:
-            # create teams with students in DB
-            # sort_and_create_teams()
+        # print teams with students WITHOUT creating in DB
+        sort_and_only_print_groups()
 
-            # print teams with students WITHOUT creating in DB
-            sort_and_only_print_groups()
+        # create teams with students in DB
+        sort_and_create_teams()
 
-        except Exception as error:
-            logging.error(error)
+        
 
 
-# data example for student:
-# {'name': 'Student_1', 'id': 1, 'level': 'beginner', 'time': ['1900']}
-
-# main func
 def sort_and_create_teams():
     students = sort() # sort() -> students = (novice, novice_plus, junior)
     for student_skill_group in students:
         groups = create_studets_groups(student_skill_group)
+
         for group in groups:
-            team = create_team(group[0]['id'])
+            group = add_call_time_in_group(group)
+            team = create_team(group[1]['id'], group[0])
+            group.pop(0)
+
             for student in group:
                 add_participant_in_team(team, student['id'])
 
@@ -71,48 +70,53 @@ def chunk_students_by_skill(students):
     return (novice, novice_plus, junior)
 
 
+def add_call_time_in_group(group):
+    first_member_call_times = set(group[0]['time'])
+  
+    for member in group:
+        common_times = set(member['time']) & first_member_call_times
+
+    for common_time in common_times:
+        break
+
+    group.insert(0, common_time)
+
+    return group
+
+
 def create_group_by_time(students_group):
-    print('START CREATING')
     students_group = sorted(students_group, key=lambda item: (item['time']))
+
     resort_students = []
     groups = []
     group = []
-    time = None
+
     for student in students_group:
-        if len(group) == 0:
+        if not group:
             group.append(student)
-            time = student['time'][0]
-
-        elif len(group) == 1 and time in student['time']:
-            group.append(student)
-
-        elif len(group) == 1 and time not in student['time']:
-            resort_students.append(group[0])
-            group = []
-            group.append(student)
-            time = student['time'][0]
-
-        elif len(group) == 2 and time in student['time']:
+            time = student['time']
+        
+        elif len(group) == 2 and check_the_same_element(time, student['time']):
             group.append(student)
             groups.append(group)  
             group = []
             time = None
 
-        elif len(group) == 2 and time not in student['time']:
+        elif len(group) < 3 and check_the_same_element(time, student['time']):
+            group.append(student)
+
+        else:
             resort_students.append(student)
-            groups.append(group)
-            group = []
-            time = None
 
     if len(group) == 1:
-        resort_students.append(group[0])
+        students_group.remove(group[0])
 
     if len(group) == 2:
         groups.append(group)
     
     if len(resort_students) != 0:
         resort_students = sorted(resort_students, key=lambda item: (len( item['time']), item['time']))
-
+    
     return groups, resort_students
 
 
@@ -129,27 +133,39 @@ def check_the_same_time_slots(resort_students):
 
         else:
             test_time_slots.append(time_slot)
+            
+    return False
+
+
+def check_the_same_element(list_1, list_2):
+    for element in list_2:
+        if element in list_1:
+
+            return True
 
     return False
 
 
 def create_studets_groups(students_sorted_by_skill):
     groups, resort_students = create_group_by_time(students_sorted_by_skill)
-    
-    if check_the_same_time_slots(resort_students):
-        print('RESORT STUDENTS ', resort_students)
-        more_groups, more_resort_students = create_group_by_time(resort_students)
-        print('MORE GROUP ', more_groups)
-        groups += more_groups
-    else:
-        print('HAS NO The SAAAAAme')
+
+    while resort_students:
+        another_groups, resort_students = create_group_by_time(resort_students)
+        groups += another_groups
 
     return groups
 
 
-def create_team(student_id, team_title='default_name'):
+def create_team(student_id, call_time, team_title='default_name'):
     participant = Participant.objects.get(student__pk=student_id)
-    team = Team(title=team_title, project=participant.project, time=participant.times.all()[0])
+
+    for participant_time in participant.times.all():
+        if participant_time.time_interval.strftime('%H%M') == call_time:
+            print('TIME: ', participant_time)
+            print('TIME: ', participant_time.time_interval.strftime('%H%M'))
+            break
+
+    team = Team(title=team_title, project=participant.project, time=participant_time)
     team.save()
 
     return team
