@@ -135,7 +135,9 @@ def start(update, context):
 
     chat_id = update.message.chat_id
     if student := context.user_data.get('student'):
-        message = static_text.start_message
+        message = static_text.start_message.format(
+            name=student.name
+        )
         context.bot.send_message(chat_id, message,
                                  reply_markup=ReplyKeyboardRemove())
         install_first_week_job(context, student, chat_id)

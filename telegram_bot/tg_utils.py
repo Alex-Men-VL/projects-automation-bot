@@ -149,7 +149,7 @@ def install_first_week_job(context, student, chat_id):
         )
     context.job_queue.run_once(
         send_notification,
-        when=10,
+        when=15,
         context={'chat_id': chat_id, 'student': student},
         name=f'{context.user_data["username"]} notification'
     )
@@ -214,7 +214,10 @@ def start_second_week_job(context):
 
 
 def send_list_of_commands(context, pm):
+    # Раскомментировать на продакшене
     # current_pm_teams = Team.objects.filter(time__pm=pm).
+
+    # Закомментировать на продакшене
     pm = ProductManager.objects.get(name='Катя')
     current_pm_teams = Team.objects.filter(
         time__pm=pm
