@@ -5,7 +5,7 @@ from django.core.management import BaseCommand
 from telegram import Bot, BotCommand
 
 from telegram_bot.tg_automation import (
-    change_participant_time, TgBot,
+    change_participant_time, handle_admin, TgBot,
     start,
     handle_poll,
 )
@@ -28,6 +28,7 @@ def start_bot():
             'START': start,
             'HANDLE_POLL': handle_poll,
             'CHANGE_TIME': change_participant_time,
+            'ADMIN': handle_admin,
         }
     )
     bot.updater.start_polling()
@@ -41,11 +42,11 @@ def set_up_commands(bot_instance):
     langs_with_commands = {
         'en': {
             'help': 'Need help',
-            # 'admin': 'Get administrator rights',
+            'teams': 'Get a list of generated teams',
         },
         'ru': {
             'help': 'Нужна помощь',
-            # 'admin': 'Получить права администратора',
+            'teams': 'Получить список сформированных команд',
 
         }
     }

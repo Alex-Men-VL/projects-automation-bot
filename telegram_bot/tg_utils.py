@@ -4,7 +4,7 @@ from django.db.models import Count
 from telegram import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
 
 from . import static_text
-from .models import Participant, Project, Student, Team, Time
+from .models import Participant, ProductManager, Project, Student, Team, Time
 
 
 def get_time_intervals(special_times=None):
@@ -210,4 +210,38 @@ def start_second_week_job(context):
             day=21,
             context={'chat_id': student.chat_id, 'student': student},
             name=f'{context.user_data["username"]} notification'
+        )
+
+
+def send_list_of_commands(context, pm):
+    # current_pm_teams = Team.objects.filter(time__pm=pm).
+    pm = ProductManager.objects.get(name='Катя')
+    current_pm_teams = Team.objects.filter(
+        time__pm=pm
+    ).annotate(
+        participants_count=Count('participants')
+    ).filter(participants_count__exact=3).prefetch_related(
+        'participants__student'
+    ).select_related('time')
+    for number, team in enumerate(current_pm_teams, start=1):
+        participants = team.participants.values_list('student__name',
+                                                     'student__tg_username')
+        message = static_text.team_info.format(
+            number=number,
+            first_pt=participants[0][0],
+            first_tg=participants[0][1],
+            second_pt=participants[1][0],
+            second_tg=participants[1][1],
+            third_pm=participants[2][0],
+            third_tg=participants[2][1],
+            team_time=team.time.time_interval.strftime('%H:%M')
+        )
+        context.bot.send_message(
+            context.user_data['chat_id'],
+            message
+        )
+    if not current_pm_teams:
+        context.bot.send_message(
+            context.user_data['chat_id'],
+            static_text.admin_there_are_no_commands
         )

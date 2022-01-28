@@ -1,7 +1,8 @@
 from django.db import transaction
-from telegram import ReplyKeyboardRemove
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, \
+    ReplyKeyboardRemove
 from telegram.ext import (
-    CommandHandler,
+    CallbackQueryHandler, CommandHandler,
     Filters, MessageHandler, PollAnswerHandler,
     Updater
 )
@@ -11,7 +12,8 @@ from .models import Participant, ProductManager, Project, Student
 from .tg_utils import (
     add_participant_in_team, add_participant_selected_times,
     get_time_intervals,
-    install_first_week_job, install_second_week_job, send_notification,
+    install_first_week_job, install_second_week_job, send_list_of_commands,
+    send_notification,
     send_poll_with_times
 )
 
@@ -68,6 +70,12 @@ class TgBot:
         self.updater.dispatcher.add_handler(
             CommandHandler('help', self.help_handler)
         )
+        self.updater.dispatcher.add_handler(
+            CommandHandler('teams', get_user(self.handle_users_reply))
+        )
+        self.updater.dispatcher.add_handler(
+            CallbackQueryHandler(get_user(self.handle_users_reply))
+        )
 
     def handle_users_reply(self, update, context):
         user = context.user_data.get('student') or context.user_data.get('pm')
@@ -86,6 +94,12 @@ class TgBot:
             user_state = 'START'
         elif user_reply == '/change_time':
             user_state = 'CHANGE_TIME'
+        elif user_reply == '/teams':
+            if not context.user_data.get('pm', False):
+                send_permission_denied(update)
+                return
+            else:
+                user_state = 'ADMIN'
         else:
             user_state = user.bot_state
             user_state = user_state if user_state else 'HANDLE_POLL'
@@ -127,7 +141,19 @@ def start(update, context):
         install_first_week_job(context, student, chat_id)
         return 'HANDLE_POLL'
     elif pm := context.user_data.get('pm'):
-        pass
+        message = static_text.admin_message.format(name=pm.name)
+        button = [
+            [
+                InlineKeyboardButton('Получить список сформированных команд',
+                                     callback_data='teams_list')
+            ]
+        ]
+        context.bot.send_message(
+            context.user_data['chat_id'],
+            message,
+            reply_markup=InlineKeyboardMarkup(button)
+        )
+        return 'ADMIN'
 
 
 @transaction.atomic
@@ -228,3 +254,13 @@ def change_participant_time(update, context):
                 message
             )
         return 'HANDLE_POLL'
+
+
+def send_permission_denied(update):
+    update.message.reply_text(static_text.permission_denied_message)
+
+
+def handle_admin(update, context):
+    pm = context.user_data['pm']
+    send_list_of_commands(context, pm)
+    return 'ADMIN'
