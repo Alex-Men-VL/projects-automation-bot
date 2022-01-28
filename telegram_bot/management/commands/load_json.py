@@ -6,15 +6,23 @@ import json
 
     
 class Command(BaseCommand):
-      def handle(self, *args, **options):
-        try:
-            load_json()
-        except Exception as error:
-            logging.error(error)
+      def add_arguments(self, parser):
+        parser.add_argument('-f', '--file', type=str, help='Название файла JSON')
+
+      def handle(self, *args, **kwargs):
+            file = kwargs['file']
+            if file:
+                  file = f'{file}.json'
+            else:
+                  file = 'file.json'
+            try:
+                  load_json(file)
+            except Exception as error:
+                  logging.error(error)
 
 
-def load_json():
-      with open('file.json', 'r', encoding='utf-8') as file:
+def load_json(file):
+      with open(file, 'r', encoding='utf-8') as file:
             file = json.load(file)
       for group in file:
             if group == 'PM':
