@@ -1,7 +1,7 @@
 from datetime import date, datetime, timedelta
 
 from django.db.models import Count
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
 
 from . import static_text
 from .models import Participant, Team, Time
@@ -34,32 +34,39 @@ def get_time_intervals(special_times=None):
 def send_poll_with_times(context):
     question = static_text.poll_question
     job_context = context.job.context
-    if special_times := job_context.get('special_times', False):
+    if (special_times := job_context.get('special_times', False)) or \
+            special_times == {}:
         options = special_times
         allows_multiple_answers = False
     else:
         options = job_context['time_intervals']
         allows_multiple_answers = True
     if len(options) > 1:
-        context.bot.send_poll(
+        message = context.bot.send_poll(
             chat_id=job_context['chat_id'],
             question=question,
             options=list(options.keys()),
             is_anonymous=False,
             allows_multiple_answers=allows_multiple_answers,
         )
-    else:
+    elif len(options) == 1:
         message = static_text.poll_question_with_one_option
         button = [
             [
-                InlineKeyboardButton(list(options.keys())[0],
-                                     callback_data='time')
+                KeyboardButton(list(options.keys())[0])
             ]
         ]
         context.bot.send_message(
             job_context['chat_id'],
             message,
-            reply_markup=InlineKeyboardMarkup(button)
+            reply_markup=ReplyKeyboardMarkup(button, one_time_keyboard=True)
+        )
+    else:
+        message = static_text.poll_question_with_zero_option
+        context.bot.send_message(
+            job_context['chat_id'],
+            message,
+            reply_markup=ReplyKeyboardRemove()
         )
 
 
@@ -81,10 +88,14 @@ def send_notification(context):
         ).filter(participants_count__exact=2).select_related('time').order_by(
             'time__time_interval'
         ).values_list('time__time_interval', 'id')
-        time_intervals = get_time_intervals(special_times=available_times)
+        if not available_times:
+            time_intervals = {}
+        else:
+            time_intervals = get_time_intervals(special_times=available_times)
+
         context.job_queue.run_once(
             send_poll_with_times,
-            when=5,
+            when=1,
             context={'chat_id': job_context['chat_id'],
                      'special_times': time_intervals},
         )

@@ -91,7 +91,7 @@ DATABASES = {
 }
 
 # Вывод запросов в терминал для отладки
-if DEBUG:
+if not DEBUG:
     LOGGING = {
         'version': 1,
         'disable_existing_loggers': False,
