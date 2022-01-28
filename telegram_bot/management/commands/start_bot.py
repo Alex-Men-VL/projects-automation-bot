@@ -42,12 +42,13 @@ def set_up_commands(bot_instance):
     langs_with_commands = {
         'en': {
             'help': 'Need help',
+            'change_time': 'Change the selected call time',
             'teams': 'Get a list of generated teams',
         },
         'ru': {
             'help': 'Нужна помощь',
+            'change_time': 'Изменить выбранное время созвона',
             'teams': 'Получить список сформированных команд',
-
         }
     }
 
