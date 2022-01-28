@@ -135,9 +135,10 @@ def handle_poll(update, context):
         return handle_poll_answer(update, context, participant, created)
 
     if update.poll_answer and not update.poll_answer.option_ids:
+        message = static_text.warning_message
         context.bot.send_message(
             context.user_data['chat_id'],
-            'СТОП!',  # FIXME
+            message,
             reply_markup=ReplyKeyboardRemove()
         )
         return 'HANDLE_POLL'
