@@ -1,10 +1,10 @@
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 
 from django.db.models import Count
 from telegram import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
 
 from . import static_text
-from .models import Participant, Team, Time
+from .models import Participant, Project, Student, Team, Time
 
 
 def get_time_intervals(special_times=None):
@@ -120,8 +120,8 @@ def add_participant_selected_times(participant, selected_intervals, intervals):
     for interval in selected_intervals:
         time_ids.extend(intervals[interval])
     times = Time.objects.filter(pk__in=time_ids)
-    for time in times:
-        participant.times.add(time)
+    for selected_time in times:
+        participant.times.add(selected_time)
 
 
 def add_participant_in_team(participant, selected_interval, intervals):
@@ -132,3 +132,84 @@ def add_participant_in_team(participant, selected_interval, intervals):
     if team:
         team.participants.add(participant)
     return team
+
+
+def install_first_week_job(context, student, chat_id):
+    # Раскомментировать на продакшене
+    # start_first_week_job(context, chat_id, student)
+
+    # Закомментировать на продакшене
+    if not Participant.objects.filter(
+            project=Project.objects.last()
+    ).filter(student=student).exists():
+        context.job_queue.run_once(
+            send_poll_with_times,
+            when=2,
+            context={'chat_id': chat_id,
+                     'time_intervals': context.bot_data['time_intervals']},
+            name=context.user_data['username'],
+        )
+    context.job_queue.run_once(
+        send_notification,
+        when=10,
+        context={'chat_id': chat_id, 'student': student},
+        name=f'{context.user_data["username"]} notification'
+    )
+
+
+def start_first_week_job(context, student):
+    first_job = context.job_queue.get_jobs_by_name(
+        context.user_data['username']
+    )
+    if not first_job:
+        context.job_queue.run_monthly(
+            send_poll_with_times,
+            time(17, 0, 0),
+            day=13,
+            context={'chat_id': student.chat_id,
+                     'time_intervals': context.bot_data['time_intervals']},
+            name=context.user_data['username'])
+    second_job = context.job_queue.get_jobs_by_name(
+        f'{context.user_data["username"]} notification'
+    )
+    if not second_job:
+        context.job_queue.run_monthly(
+            send_notification,
+            time(17, 0, 0),
+            day=17,
+            context={'chat_id': student.chat_id, 'student': student},
+            name=f'{context.user_data["username"]} notification'
+        )
+
+
+def install_second_week_job(context):
+    second_week_job = context.job_queue.get_jobs_by_name('next_week')
+    if not second_week_job:
+        context.job_queue.run_monthly(
+            start_second_week_job,
+            time(17, 0, 0),
+            day=20,
+            name='next_week'
+        )
+
+
+def start_second_week_job(context):
+    students_taking_part = Participant.objects.filter(
+        project=Project.objects.last()
+    ).values_list('student__id', flat=True)
+    remaining_students = Student.objects.exclude(id__in=students_taking_part)
+    for student in remaining_students:
+        context.job_queue.run_once(
+            send_poll_with_times,
+            when=1,
+            context={'chat_id': student.chat_id,
+                     'time_intervals': context.bot_data['time_intervals']},
+            name=context.user_data['username'])
+
+        context.job_queue.run_monthly(
+            send_notification,
+            time(17, 0, 0),
+            day=21,
+            context={'chat_id': student.chat_id, 'student': student},
+            name=f'{context.user_data["username"]} notification'
+        )

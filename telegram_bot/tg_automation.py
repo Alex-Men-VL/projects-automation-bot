@@ -1,9 +1,7 @@
-from datetime import time  # Не удалять
-
 from django.db import transaction
 from telegram import ReplyKeyboardRemove
 from telegram.ext import (
-    CallbackQueryHandler, CommandHandler,
+    CommandHandler,
     Filters, MessageHandler, PollAnswerHandler,
     Updater
 )
@@ -13,7 +11,8 @@ from .models import Participant, ProductManager, Project, Student
 from .tg_utils import (
     add_participant_in_team, add_participant_selected_times,
     get_time_intervals,
-    send_notification, send_poll_with_times
+    install_first_week_job, install_second_week_job, send_notification,
+    send_poll_with_times
 )
 
 
@@ -85,6 +84,7 @@ class TgBot:
 
         state_handler = self.states_functions[user_state]
         next_state = state_handler(update, context)
+        user.chat_id = chat_id
         user.bot_state = next_state
         user.save()
 
@@ -99,51 +99,14 @@ class TgBot:
 
 
 def start(update, context):
+    install_second_week_job(context)
+
     chat_id = update.message.chat_id
     if student := context.user_data.get('student'):
         message = static_text.start_message
         context.bot.send_message(chat_id, message,
                                  reply_markup=ReplyKeyboardRemove())
-        '''Раскомментировать на продакшене
-        first_job = context.job_queue.get_jobs_by_name(
-            context.user_data['username']
-        )
-        if not first_job:
-            context.job_queue.run_monthly(
-                send_poll_with_times,
-                time(17, 0, 0),
-                day=13,
-                context={'chat_id': chat_id,
-                         'time_intervals': context.bot_data['time_intervals']},
-                name=context.user_data['username'])
-        second_job = context.job_queue.get_jobs_by_name(
-            f'{context.user_data["username"]} notification'
-        )
-        if not second_job:
-            context.job_queue.run_monthly(
-                send_notification,
-                time(17, 0, 0),
-                day=17,
-                context={'chat_id': chat_id, 'student': student},
-                name=f'{context.user_data["username"]} notification'
-            )'''
-        # Закомментировать на продакшене
-        if not Participant.objects.filter(
-                project=Project.objects.last()
-        ).filter(student=student).exists():
-            context.job_queue.run_once(
-                send_poll_with_times,
-                when=2,
-                context={'chat_id': chat_id,
-                         'time_intervals': context.bot_data['time_intervals']},
-                name=context.user_data['username'],
-            )
-        context.job_queue.run_once(
-            send_notification,
-            when=10,
-            context={'chat_id': chat_id, 'student': student},
-            name=f'{context.user_data["username"]} notification'
-        )
+        install_first_week_job(context, student, chat_id)
         return 'HANDLE_POLL'
 
 
