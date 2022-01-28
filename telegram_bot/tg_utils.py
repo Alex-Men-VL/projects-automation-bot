@@ -59,7 +59,9 @@ def send_poll_with_times(context):
         context.bot.send_message(
             job_context['chat_id'],
             message,
-            reply_markup=ReplyKeyboardMarkup(button, one_time_keyboard=True)
+            reply_markup=ReplyKeyboardMarkup(button,
+                                             one_time_keyboard=True,
+                                             resize_keyboard=True)
         )
     else:
         message = static_text.poll_question_with_zero_option
@@ -82,12 +84,7 @@ def send_notification(context):
             reply_markup=None
         )
     else:
-        # TODO: учесть уровень учеников
-        available_times = Team.objects.annotate(
-            participants_count=Count('participants')
-        ).filter(participants_count__exact=2).select_related('time').order_by(
-            'time__time_interval'
-        ).values_list('time__time_interval', 'id')
+        available_times = get_available_times(student)
         if not available_times:
             time_intervals = {}
         else:
@@ -99,6 +96,23 @@ def send_notification(context):
             context={'chat_id': job_context['chat_id'],
                      'special_times': time_intervals},
         )
+
+
+def get_available_times(student):
+    available_teams = Team.objects.annotate(
+        participants_count=Count('participants')
+    ).filter(participants_count__exact=2).prefetch_related(
+        'participants'
+    ).select_related('time')
+    available_teams_for_student = []
+    for team in available_teams:
+        participants = team.participants.select_related('student__level')
+        team_level = set(pt.student.level for pt in participants)
+        if student.level in team_level:
+            available_teams_for_student.append(team)
+    available_times = [(team.time.time_interval, team.pk) for team in
+                       available_teams_for_student]
+    return available_times
 
 
 def add_participant_selected_times(participant, selected_intervals, intervals):
