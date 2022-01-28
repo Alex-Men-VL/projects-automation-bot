@@ -37,38 +37,36 @@ def send_poll_with_times(context):
     if (special_times := job_context.get('special_times', False)) or \
             special_times == {}:
         options = special_times
-        allows_multiple_answers = False
+        if len(options) == 1:
+            message = static_text.poll_question_with_one_option
+        elif len(options) == 0:
+            message = static_text.poll_question_with_zero_option
+        else:
+            message = static_text.poll_question
+        buttons = []
+        for time_interval in options.keys():
+            buttons.append([time_interval])
+
+        if buttons:
+            reply_markup = ReplyKeyboardMarkup(buttons,
+                                               one_time_keyboard=True,
+                                               resize_keyboard=True)
+        else:
+            reply_markup = ReplyKeyboardRemove()
+
+        context.bot.send_message(
+            job_context['chat_id'],
+            message,
+            reply_markup=reply_markup
+        )
     else:
         options = job_context['time_intervals']
-        allows_multiple_answers = True
-    if len(options) > 1:
-        message = context.bot.send_poll(
+        context.bot.send_poll(
             chat_id=job_context['chat_id'],
             question=question,
             options=list(options.keys()),
             is_anonymous=False,
-            allows_multiple_answers=allows_multiple_answers,
-        )
-    elif len(options) == 1:
-        message = static_text.poll_question_with_one_option
-        button = [
-            [
-                KeyboardButton(list(options.keys())[0])
-            ]
-        ]
-        context.bot.send_message(
-            job_context['chat_id'],
-            message,
-            reply_markup=ReplyKeyboardMarkup(button,
-                                             one_time_keyboard=True,
-                                             resize_keyboard=True)
-        )
-    else:
-        message = static_text.poll_question_with_zero_option
-        context.bot.send_message(
-            job_context['chat_id'],
-            message,
-            reply_markup=ReplyKeyboardRemove()
+            allows_multiple_answers=True,
         )
 
 

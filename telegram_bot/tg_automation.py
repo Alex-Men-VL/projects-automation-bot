@@ -56,6 +56,10 @@ class TgBot:
             ), get_user(self.handle_users_reply))
         )
         self.updater.dispatcher.add_handler(
+            MessageHandler(Filters.text & ~Filters.command,
+                           self.handle_unregistered_message)
+        )
+        self.updater.dispatcher.add_handler(
             CommandHandler('start', get_user(self.handle_users_reply))
         )
         self.updater.dispatcher.add_handler(
@@ -107,6 +111,9 @@ class TgBot:
 
     def help_handler(self, update, context):
         update.message.reply_text(static_text.help_message)
+
+    def handle_unregistered_message(self, update, context):
+        update.message.reply_text(static_text.unregistered_message)
 
 
 def start(update, context):
