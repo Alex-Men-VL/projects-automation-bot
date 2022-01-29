@@ -1,7 +1,8 @@
 import logging
+from turtle import title
 from django import test
 from django.core.management import BaseCommand
-from telegram_bot.models import Participant, Team
+from telegram_bot.models import Participant, Team, ProductManager, Time, Project
 
 
 class Command(BaseCommand):
@@ -13,21 +14,33 @@ class Command(BaseCommand):
         sort_and_create_teams()
 
         
-
-
 def sort_and_create_teams():
-    students = sort() # sort() -> students = (novice, novice_plus, junior)
+    students = sort() # sort() -> students = (junior, novice_plus, novice)
     for student_skill_group in students:
         groups = create_studets_groups(student_skill_group)
-
+        groups_with_call_time = []
         for group in groups:
             group = add_call_time_in_group(group)
-            team = create_team(group[1]['id'], group[0])
-            group.pop(0)
+            groups_with_call_time.append(group)
 
-            for student in group:
-                add_participant_in_team(team, student['id'])
+        prod_mngrs = ProductManager.objects.all()
 
+        for group in groups_with_call_time:
+            for prod_mngr in prod_mngrs:
+                time = check_manager_free_time(prod_mngr, group[0])
+                if time:
+                    team = create_team(time, prod_mngr)
+                    group.pop(0)
+                    for student in group:
+                        add_participant_in_team(team, student['id'])
+
+def check_manager_free_time(manager, time: str):
+    manager_free_times = Time.objects.filter(pm=manager).filter(team__isnull=True)
+    for mager_time in manager_free_times:
+        if mager_time.time_interval.strftime('%H%M') == time:
+            return mager_time
+    
+    return False
 
 def sort():
     participants = Participant.objects.all()
@@ -58,16 +71,16 @@ def chunk_students_by_skill(students):
     novice, novice_plus, junior = [], [], []
 
     for student in students:
-        if student['level'] == 'novice':
-            novice.append(student)
+        if student['level'] == 'junior':
+            junior.append(student)
 
         if student['level'] == 'novice+':
             novice_plus.append(student)
 
-        if student['level'] == 'junior':
-            junior.append(student)
+        if student['level'] == 'novice':
+            novice.append(student)
 
-    return (novice, novice_plus, junior)
+    return (junior, novice_plus, novice)
 
 
 def add_call_time_in_group(group):
@@ -156,26 +169,6 @@ def create_studets_groups(students_sorted_by_skill):
     return groups
 
 
-def create_team(student_id, call_time, team_title='default_name'):
-    participant = Participant.objects.get(student__pk=student_id)
-
-    for participant_time in participant.times.all():
-        if participant_time.time_interval.strftime('%H%M') == call_time:
-            print('TIME: ', participant_time)
-            print('TIME: ', participant_time.time_interval.strftime('%H%M'))
-            break
-
-    team = Team(title=team_title, project=participant.project, time=participant_time)
-    team.save()
-
-    return team
-
-
-def add_participant_in_team(team, student_id):
-    participant = Participant.objects.get(student__pk=student_id)
-    team.participants.add(participant)
-
-
 def sort_and_only_print_groups():
     students = sort() # sort() -> students = (novice, novice_plus, junior)
     print()
@@ -194,3 +187,22 @@ def sort_and_only_print_groups():
                 print(student)
             print('----')
         print('====')
+
+
+def create_team(call_time, prod_mngr):
+    project = Project.objects.all()[0]
+    prod_mngr_name = prod_mngr.name
+    call_time_for_title = call_time.time_interval.strftime('%H:%M')
+    title = f'{prod_mngr_name}_{call_time_for_title}'
+
+    team = Team(title=title, project=project, time=call_time)
+    team.save()
+
+    return team
+
+
+def add_participant_in_team(team, student_id):
+    participant = Participant.objects.get(student__pk=student_id)
+    team.participants.add(participant)
+
+
