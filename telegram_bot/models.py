@@ -103,20 +103,17 @@ class Project(models.Model):
         blank=True,
         null=True
     )
-    '''
-    Альтернатива
-    description = models.FileField(
-        'описание проекта',
-        blank=True,
-        null=True
-    )'''
+    link = models.URLField(verbose_name='Ссылка на задание', blank=True, null=True)
+    start = models.DateTimeField(verbose_name='Дата начала проекта', blank=False, null=False)
+    end = models.DateTimeField(verbose_name='Дата начала проекта', blank=False, null=False)
+
 
     class Meta:
         verbose_name = 'проект',
         verbose_name_plural = 'проекты'
 
     def __str__(self):
-        return f'{self.title}'
+        return f'{self.title} {self.start.strftime("%d.%m.%Y")} - {self.end.strftime("%d.%m.%Y")}'
 
 
 class Participant(models.Model):
