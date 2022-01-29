@@ -14,7 +14,8 @@ from .models import (
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
-    exclude = ('bot_state',)
+    exclude = ('bot_state', 'chat_id')
+    readonly_fields = ('tg_username',)
 
 
 @admin.register(StudentLevel)
@@ -28,7 +29,8 @@ class TimeInline(admin.TabularInline):
 
 @admin.register(ProductManager)
 class ProductManagerAdmin(admin.ModelAdmin):
-    exclude = ('bot_state',)
+    exclude = ('bot_state', 'chat_id')
+    readonly_fields = ('tg_username',)
     inlines = (TimeInline,)
 
 
