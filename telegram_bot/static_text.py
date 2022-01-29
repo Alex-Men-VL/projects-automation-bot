@@ -23,6 +23,13 @@ unregistered_message = '''Я вас не понимаю.
 Если возникли проблемы, напишите /help или организатору проекта.'''
 permission_denied_message = '''Вы не можете получить доступ к функционалу \
 продукт-менеджера.'''
+error_text = '''К сожалению произошла ошибка в момент обработки сообщения.
+Мы уже работаем над этой проблемой.'''
+error_dev_text = '''Возникло исключение при обработке сообщения.
+<pre>update = {update}</pre>
+<pre>context.chat_data = {chat_data}</pre>
+<pre>context.user_data = {user_data}</pre>
+<pre>{tb_string}</pre>'''
 
 # PM messages
 

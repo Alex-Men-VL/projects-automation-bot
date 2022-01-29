@@ -1,9 +1,23 @@
+import html
+import json
+import logging
+import traceback
+
+from django.conf import settings
 from django.db import transaction
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, \
-    ReplyKeyboardRemove
+from telegram import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    ParseMode,
+    ReplyKeyboardRemove,
+    Update
+)
 from telegram.ext import (
-    CallbackQueryHandler, CommandHandler,
-    Filters, MessageHandler, PollAnswerHandler,
+    CallbackQueryHandler,
+    CommandHandler,
+    Filters,
+    MessageHandler,
+    PollAnswerHandler,
     Updater
 )
 
@@ -16,6 +30,8 @@ from .tg_utils import (
     send_notification,
     send_poll_with_times
 )
+
+logger = logging.getLogger(__name__)
 
 
 def get_user(func):
@@ -76,6 +92,7 @@ class TgBot:
         self.updater.dispatcher.add_handler(
             CallbackQueryHandler(get_user(self.handle_users_reply))
         )
+        self.updater.dispatcher.add_error_handler(self.error_handler)
 
     def handle_users_reply(self, update, context):
         user = context.user_data.get('student') or context.user_data.get('pm')
@@ -128,6 +145,32 @@ class TgBot:
 
     def handle_unregistered_message(self, update, context):
         update.message.reply_text(static_text.unregistered_message)
+
+    def error_handler(self, update, context):
+        logger.error(msg="Произошла ошибка: ", exc_info=context.error)
+
+        if update.effective_message:
+            text = static_text.error_text
+            update.effective_message.reply_text(text)
+
+        tb_list = traceback.format_exception(None, context.error,
+                                             context.error.__traceback__)
+        tb_string = ''.join(tb_list)
+        update_str = update.to_dict() if isinstance(update, Update) else \
+            str(update)
+        message = static_text.error_dev_text.format(
+            update=html.escape(json.dumps(
+                update_str,
+                indent=2,
+                ensure_ascii=False
+            )),
+            chat_data=html.escape(str(context.chat_data)),
+            user_data=html.escape(str(context.user_data)),
+            tb_string=html.escape(tb_string)
+        )
+        devs = settings.DEVS_CHAT_ID
+        for dev_id in devs:
+            context.bot.send_message(dev_id, message, parse_mode=ParseMode.HTML)
 
 
 def start(update, context):

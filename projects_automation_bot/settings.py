@@ -156,5 +156,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 TELEGRAM_BOT_TOKEN = env.str('TELEGRAM_BOT_TOKEN')
 
-
+DEVS_CHAT_ID = env.list('DEVS_CHAT_ID')
 
