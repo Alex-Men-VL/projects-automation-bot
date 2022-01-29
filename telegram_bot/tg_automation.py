@@ -85,6 +85,9 @@ class TgBot:
             CommandHandler('change_time', get_user(self.handle_users_reply))
         )
         self.updater.dispatcher.add_handler(
+            CommandHandler('leave_project', get_user(self.handle_users_reply))
+        )
+        self.updater.dispatcher.add_handler(
             CommandHandler('help', self.help_handler)
         )
         self.updater.dispatcher.add_handler(
@@ -114,6 +117,8 @@ class TgBot:
             user_state = 'START'
         elif user_reply == '/change_time':
             user_state = 'CHANGE_TIME'
+        elif user_reply == '/leave_project':
+            user_state = 'LEAVE_PROJECT'
         elif user_reply == '/teams':
             if not context.user_data.get('pm', False):
                 send_permission_denied(update)
@@ -272,7 +277,7 @@ def send_poll_report(context, participant, answers, poll_options, chat_id):
         )
 
 
-def change_participant_time(update, context):
+def handle_change_participation(update, context, delete_pt=False):
     if student := context.user_data.get('student'):
         participant = Participant.objects.filter(
             project=Project.objects.last()
@@ -281,27 +286,51 @@ def change_participant_time(update, context):
             participant = participant[0]
             if not participant.team:
                 participant.delete()
-                context.job_queue.run_once(
-                    send_poll_with_times,
-                    when=1,
-                    context={
-                        'chat_id': student.chat_id,
-                        'time_intervals': context.bot_data['time_intervals']
-                    },
-                    name=context.user_data['username'])
+                if not delete_pt:
+                    message = static_text.change_time_message
+                    context.job_queue.run_once(
+                        send_poll_with_times,
+                        when=3,
+                        context={
+                            'chat_id': student.chat_id,
+                            'time_intervals': context.bot_data['time_intervals']
+                        },
+                        name=context.user_data['username'])
+                else:
+                    message = static_text.leave_project_success_message
             else:
-                message = static_text.change_time_late_message
-                context.bot.send_message(
-                    student.chat_id,
-                    message
-                )
+                message = static_text.change_participation_message
         else:
-            message = static_text.unsuccessful_change_time_message
+            message = static_text.unsuccessful_change_participation_message
+
+        if message:
             context.bot.send_message(
                 student.chat_id,
                 message
             )
         return 'HANDLE_POLL'
+
+
+def handle_leave_project(update, context):
+    if update.callback_query:
+        if update.callback_query.data == 'Покинуть':
+            handle_change_participation(update, context, delete_pt=True)
+
+        message_id = context.user_data.pop('delete_message_id')
+        context.bot.delete_message(context.user_data['chat_id'], message_id)
+        return 'HANDLE_POLL'
+    else:
+        button = [
+            [InlineKeyboardButton('Да', callback_data='Покинуть'),
+             InlineKeyboardButton('Нет', callback_data='Не покидать')]
+        ]
+        message = context.bot.send_message(
+            context.user_data['chat_id'],
+            static_text.leave_project_confirmation,
+            reply_markup=InlineKeyboardMarkup(button)
+        )
+        context.user_data['delete_message_id'] = message.message_id
+    return 'LEAVE_PROJECT'
 
 
 def send_permission_denied(update):

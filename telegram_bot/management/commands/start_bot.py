@@ -5,9 +5,12 @@ from django.core.management import BaseCommand
 from telegram import Bot, BotCommand
 
 from telegram_bot.tg_automation import (
-    change_participant_time, handle_admin, TgBot,
-    start,
+    handle_admin,
+    handle_change_participation,
+    handle_leave_project,
     handle_poll,
+    start,
+    TgBot
 )
 
 
@@ -27,7 +30,8 @@ def start_bot():
         {
             'START': start,
             'HANDLE_POLL': handle_poll,
-            'CHANGE_TIME': change_participant_time,
+            'CHANGE_TIME': handle_change_participation,
+            'LEAVE_PROJECT': handle_leave_project,
             'ADMIN': handle_admin,
         }
     )
@@ -43,11 +47,13 @@ def set_up_commands(bot_instance):
         'en': {
             'help': 'Need help',
             'change_time': 'Change the selected call time',
+            'leave_project': 'Leave the project',
             'teams': 'Get a list of generated teams',
         },
         'ru': {
             'help': 'Нужна помощь',
             'change_time': 'Изменить выбранное время созвона',
+            'leave_project': 'Покинуть проект',
             'teams': 'Получить список сформированных команд',
         }
     }
