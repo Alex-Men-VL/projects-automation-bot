@@ -2,6 +2,10 @@ from django.core.management import BaseCommand
 
 from telegram_bot.models import Participant, ProductManager, Project, Team, Time
 
+import logging
+from turtle import title
+from django import test
+
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
@@ -10,6 +14,7 @@ class Command(BaseCommand):
 
         # create teams with students in DB
         sort_and_create_teams()
+
 
 
 def sort_and_create_teams():
@@ -33,6 +38,7 @@ def sort_and_create_teams():
                         add_participant_in_team(team, student['id'])
 
 
+
 def check_manager_free_time(manager, time: str):
     manager_free_times = Time.objects.filter(pm=manager).filter(
         team__isnull=True
@@ -42,6 +48,7 @@ def check_manager_free_time(manager, time: str):
             return manager_time
 
     return False
+
 
 
 def sort():
@@ -88,6 +95,7 @@ def chunk_students_by_skill(students):
             novice.append(student)
 
     return junior, novice_plus, novice
+
 
 
 def add_call_time_in_group(group):
@@ -200,6 +208,7 @@ def sort_and_only_print_groups():
 
 def create_team(call_time, prod_mngr):
     project = Project.objects.last()
+
     prod_mngr_name = prod_mngr.name
     call_time_for_title = call_time.time_interval.strftime('%H:%M')
     title = f'{prod_mngr_name}_{call_time_for_title}'

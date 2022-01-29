@@ -177,6 +177,8 @@ class Team(models.Model):
     class Meta:
         verbose_name = 'команда',
         verbose_name_plural = 'команды'
+        ordering = ('time__pm__name', 'time__time_interval')
 
     def __str__(self):
-        return f'{self.title}'
+        return f'{self.title} - {self.time.pm.name} ' \
+               f'{self.time.time_interval.strftime("%H:%M")}'
