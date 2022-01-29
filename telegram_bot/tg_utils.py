@@ -73,27 +73,29 @@ def send_poll_with_times(context):
 def send_notification(context):
     job_context = context.job.context
     student = job_context['student']
-    participant = Participant.objects.get(student=student)
-    if participant.team:
-        team_time = participant.team.time.time_interval.strftime('%H:%M')
-        context.bot.send_message(
-            job_context['chat_id'],
-            static_text.success_message.format(time=team_time),
-            reply_markup=None
-        )
-    else:
-        available_times = get_available_times(student)
-        if not available_times:
-            time_intervals = {}
+    participant = Participant.objects.filter(student=student)
+    if participant.exists():
+        participant = participant[0]
+        if participant.team:
+            team_time = participant.team.time.time_interval.strftime('%H:%M')
+            context.bot.send_message(
+                job_context['chat_id'],
+                static_text.success_message.format(time=team_time),
+                reply_markup=None
+            )
         else:
-            time_intervals = get_time_intervals(special_times=available_times)
+            available_times = get_available_times(student)
+            if not available_times:
+                time_intervals = {}
+            else:
+                time_intervals = get_time_intervals(special_times=available_times)
 
-        context.job_queue.run_once(
-            send_poll_with_times,
-            when=1,
-            context={'chat_id': job_context['chat_id'],
-                     'special_times': time_intervals},
-        )
+            context.job_queue.run_once(
+                send_poll_with_times,
+                when=1,
+                context={'chat_id': job_context['chat_id'],
+                         'special_times': time_intervals},
+            )
 
 
 def get_available_times(student):
