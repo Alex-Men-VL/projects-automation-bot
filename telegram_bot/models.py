@@ -22,6 +22,11 @@ class User(models.Model):
         blank=True,
         null=True
     )
+    chat_id = models.IntegerField(
+        'Chat ID в Telegram',
+        null=True,
+        blank=True
+    )
 
     class Meta:
         abstract = True
@@ -169,6 +174,8 @@ class Team(models.Model):
     class Meta:
         verbose_name = 'команда',
         verbose_name_plural = 'команды'
+        ordering = ('time__pm__name', 'time__time_interval')
 
     def __str__(self):
-        return f'{self.title}'
+        return f'{self.title} - {self.time.pm.name} ' \
+               f'{self.time.time_interval.strftime("%H:%M")}'
