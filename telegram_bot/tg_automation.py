@@ -47,13 +47,14 @@ def get_user(func):
         try:
             student = Student.objects.get(tg_username=tg_username)
             context.user_data['student'] = student
+            context.user_data['not_found'] = False
         except Student.DoesNotExist:
             try:
                 pm = ProductManager.objects.get(tg_username=tg_username)
                 context.user_data['pm'] = pm
+                context.user_data['not_found'] = False
             except ProductManager.DoesNotExist:
-                # TODO: надо сообщить пользователю, что он не ученик DVMN
-                return
+                context.user_data['not_found'] = True
         return func(update, context)
 
     return wrapper
@@ -95,6 +96,8 @@ class TgBot:
         self.updater.dispatcher.add_error_handler(self.error_handler)
 
     def handle_users_reply(self, update, context):
+        if context.user_data['not_found']:
+            return handle_person_not_found(update, context)
         user = context.user_data.get('student') or context.user_data.get('pm')
         if update.message:
             chat_id = update.message.chat_id
@@ -309,3 +312,10 @@ def handle_admin(update, context):
     pm = context.user_data['pm']
     send_list_of_commands(context, pm)
     return 'ADMIN'
+
+
+def handle_person_not_found(update, context):
+    message = static_text.unregistered_user_message.format(
+        site_url=settings.DVMN_URL
+    )
+    update.message.reply_text(message)
