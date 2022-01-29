@@ -1,5 +1,6 @@
 from django.contrib import admin
-
+from telegram_bot.management.commands.sort import sort_and_create_teams
+from telegram_bot.models import Team
 
 from .models import (
     Student,
@@ -46,7 +47,17 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Participant)
 class ParticipantAdmin(admin.ModelAdmin):
-    pass
+    actions = ['create_teams']
+
+    @admin.action(description='Сформировать команды из участников')
+    def create_teams(self, request, queryset):
+        if Team.objects.all():
+            text = 'Команды уже были сформированны ранее. Проверьте разде "Команды"'
+            self.message_user(request, text)
+        else:
+            sort_and_create_teams()
+            self.message_user(request, 'Команды можно посмотреть в разделе "Команды"')
+
 
 
 class ParticipantInline(admin.TabularInline):
@@ -56,3 +67,5 @@ class ParticipantInline(admin.TabularInline):
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):
     inlines = (ParticipantInline,)
+
+
