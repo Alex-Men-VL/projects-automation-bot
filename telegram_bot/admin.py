@@ -5,6 +5,7 @@ from django.db.models import Count
 from .collect_teams import sort_and_create_teams
 from .models import (Participant, ProductManager, Project, Student,
                      StudentLevel, Team, Time)
+from .trello_boards import create_project_boards
 
 
 @admin.register(Student)
@@ -27,6 +28,13 @@ class ProductManagerAdmin(admin.ModelAdmin):
     exclude = ('bot_state', 'chat_id')
     search_fields = ('name', 'tg_username')
     inlines = (TimeInline,)
+    actions = ('create_trello_boards',)
+
+    @admin.action(description='Создать Trello доски командам')
+    def create_trello_boards(self, request, queryset):
+        for pm in queryset:
+            create_project_boards(pm=pm)
+        self.message_user(request, 'Доски созданы', messages.SUCCESS)
 
 
 @admin.register(Time)
