@@ -1,15 +1,8 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 
-
-from .models import (
-    Student,
-    StudentLevel,
-    ProductManager,
-    Time,
-    Project,
-    Participant,
-    Team
-)
+from .collect_teams import sort_and_create_teams
+from .models import (Participant, ProductManager, Project, Student,
+                     StudentLevel, Team, Time)
 
 
 @admin.register(Student)
@@ -46,7 +39,18 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Participant)
 class ParticipantAdmin(admin.ModelAdmin):
-    pass
+    actions = ('create_teams',)
+
+    @admin.action(description='Сформировать команды из участников')
+    def create_teams(self, request, queryset):
+        if Team.objects.all():
+            text = '''Команды уже были сформированы ранее.
+            Проверьте разделе "Команды"'''
+            self.message_user(request, text, messages.ERROR)
+        else:
+            sort_and_create_teams()
+            text = 'Команды можно посмотреть в разделе "Команды"'
+            self.message_user(request, text, messages.SUCCESS)
 
 
 class ParticipantInline(admin.TabularInline):
@@ -56,3 +60,5 @@ class ParticipantInline(admin.TabularInline):
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):
     inlines = (ParticipantInline,)
+
+
