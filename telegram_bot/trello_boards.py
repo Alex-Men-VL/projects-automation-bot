@@ -82,8 +82,8 @@ def create_project_boards(pm=None):
                 names = names + ', ' + name
             board_name = time + names
             try:
-                trello_link = create_board(board_name, workspace, background,
-                                           trello_key, trello_token)
+                trello_link = create_board(board_name, project.workspace_id,
+                                           background, trello_key, trello_token)
             except requests.exceptions.RequestException:
                 logger.error(
                     f'Доска {board_name} не создана.'
