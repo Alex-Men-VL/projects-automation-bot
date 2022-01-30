@@ -10,6 +10,7 @@ from .models import (Participant, ProductManager, Project, Student,
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
     exclude = ('bot_state', 'chat_id')
+    search_fields = ('name', 'tg_username')
 
 
 @admin.register(StudentLevel)
@@ -24,6 +25,7 @@ class TimeInline(admin.TabularInline):
 @admin.register(ProductManager)
 class ProductManagerAdmin(admin.ModelAdmin):
     exclude = ('bot_state', 'chat_id')
+    search_fields = ('name', 'tg_username')
     inlines = (TimeInline,)
 
 
@@ -57,11 +59,13 @@ class TeamExistenceFilter(SimpleListFilter):
 @admin.register(Participant)
 class ParticipantAdmin(admin.ModelAdmin):
     list_filter = (TeamExistenceFilter,)
+    list_display = ('student', 'get_participant_level',)
+    search_fields = ('student__name', 'student__tg_username')
     actions = ('create_teams',)
 
     @admin.action(description='Сформировать команды из участников')
     def create_teams(self, request, queryset):
-        if Team.objects.all():
+        if Team.objects.filter(project=Project.objects.last()).exists():
             text = '''Команды уже были сформированы ранее.
             Проверьте разделе "Команды"'''
             self.message_user(request, text, messages.ERROR)
@@ -69,6 +73,10 @@ class ParticipantAdmin(admin.ModelAdmin):
             sort_and_create_teams()
             text = 'Команды можно посмотреть в разделе "Команды"'
             self.message_user(request, text, messages.SUCCESS)
+
+    @admin.display(description='Уровень')
+    def get_participant_level(self, obj):
+        return obj.student.level
 
 
 class ParticipantInline(admin.TabularInline):
@@ -99,4 +107,11 @@ class ParticipantCountFilter(SimpleListFilter):
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):
     inlines = (ParticipantInline,)
-    list_filter = (ParticipantCountFilter,)
+    list_filter = (ParticipantCountFilter, 'time__pm')
+    list_display = ('title', 'project', 'get_participants_level')
+
+    @admin.display(description='Уровень')
+    def get_participants_level(self, obj):
+        levels = set(pt.student.level.name for pt in obj.participants.all())
+        levels_str = ', '.join(list(levels))
+        return levels_str
