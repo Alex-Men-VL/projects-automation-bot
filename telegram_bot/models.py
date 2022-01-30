@@ -103,17 +103,35 @@ class Project(models.Model):
         blank=True,
         null=True
     )
-    link = models.URLField(verbose_name='Ссылка на задание', blank=True, null=True)
-    start = models.DateTimeField(verbose_name='Дата начала проекта', blank=False, null=False)
-    end = models.DateTimeField(verbose_name='Дата начала проекта', blank=False, null=False)
-
+    link = models.URLField(
+        'Ссылка на задание',
+        blank=True,
+        null=True
+    )
+    start = models.DateTimeField(
+        'Дата начала проекта',
+        blank=False,
+        null=False
+    )
+    end = models.DateTimeField(
+        'Дата окончания проекта',
+        blank=False,
+        null=False
+    )
+    workspace_id = models.CharField(
+        'ID рабочего пространства Trello',
+        max_length=30,
+        blank=True,
+        null=True,
+    )
 
     class Meta:
         verbose_name = 'проект',
         verbose_name_plural = 'проекты'
 
     def __str__(self):
-        return f'{self.title} {self.start.strftime("%d.%m.%Y")} - {self.end.strftime("%d.%m.%Y")}'
+        return f'{self.title} {self.start.strftime("%d.%m.%Y")} - ' \
+               f'{self.end.strftime("%d.%m.%Y")}'
 
 
 class Participant(models.Model):
@@ -170,6 +188,11 @@ class Team(models.Model):
         related_name='team',
         on_delete=models.CASCADE
     )
+    trello_link = models.URLField(
+        'ссылка на Trello-доску',
+        blank=True,
+        null=True,
+    )
 
     class Meta:
         verbose_name = 'команда',
@@ -177,5 +200,4 @@ class Team(models.Model):
         ordering = ('time__pm__name', 'time__time_interval')
 
     def __str__(self):
-        return f'{self.title} - {self.time.pm.name} ' \
-               f'{self.time.time_interval.strftime("%H:%M")}'
+        return f'{self.title}'

@@ -197,16 +197,9 @@ def start(update, context):
         return 'HANDLE_POLL'
     elif pm := context.user_data.get('pm'):
         message = static_text.admin_message.format(name=pm.name)
-        button = [
-            [
-                InlineKeyboardButton('Получить список сформированных команд',
-                                     callback_data='teams_list')
-            ]
-        ]
         context.bot.send_message(
             context.user_data['chat_id'],
-            message,
-            reply_markup=InlineKeyboardMarkup(button)
+            message
         )
         return 'ADMIN'
 

@@ -6,6 +6,7 @@ from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from . import static_text
 from .collect_teams import sort_and_create_teams
 from .models import Participant, ProductManager, Project, Student, Team, Time
+from .trello_boards import create_project_boards
 
 
 def get_time_intervals(special_times=None):
@@ -218,7 +219,13 @@ def start_second_week_job(context):
 
 def send_list_of_commands(context, pm):
     # Раскомментировать на продакшене
-    # current_pm_teams = Team.objects.filter(time__pm=pm).
+    # current_pm_teams = Team.objects.filter(
+    #         time__pm=pm
+    #     ).annotate(
+    #         participants_count=Count('participants')
+    #     ).filter(participants_count__exact=3).prefetch_related(
+    #         'participants__student'
+    #     ).select_related('time')
 
     # Закомментировать на продакшене
     pm = ProductManager.objects.get(name='Катя')
@@ -229,6 +236,8 @@ def send_list_of_commands(context, pm):
     ).filter(participants_count__exact=3).prefetch_related(
         'participants__student'
     ).select_related('time')
+
+    create_project_boards(pm=pm)
     for number, team in enumerate(current_pm_teams, start=1):
         participants = team.participants.values_list('student__name',
                                                      'student__tg_username')
@@ -240,7 +249,8 @@ def send_list_of_commands(context, pm):
             second_tg=participants[1][1],
             third_pm=participants[2][0],
             third_tg=participants[2][1],
-            team_time=team.time.time_interval.strftime('%H:%M')
+            team_time=team.time.time_interval.strftime('%H:%M'),
+            trello_link=team.trello_link if team.trello_link else 'не создана'
         )
         context.bot.send_message(
             context.user_data['chat_id'],
