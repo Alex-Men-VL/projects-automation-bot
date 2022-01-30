@@ -59,7 +59,7 @@ class TeamExistenceFilter(SimpleListFilter):
 @admin.register(Participant)
 class ParticipantAdmin(admin.ModelAdmin):
     list_filter = (TeamExistenceFilter,)
-    list_display = ('student', 'get_participant_level',)
+    list_display = ('student', 'get_participant_level', 'project')
     search_fields = ('student__name', 'student__tg_username')
     actions = ('create_teams',)
 
@@ -108,7 +108,7 @@ class ParticipantCountFilter(SimpleListFilter):
 class TeamAdmin(admin.ModelAdmin):
     inlines = (ParticipantInline,)
     list_filter = (ParticipantCountFilter, 'time__pm')
-    list_display = ('title', 'project', 'get_participants_level')
+    list_display = ('title', 'get_participants_level', 'project')
 
     @admin.display(description='Уровень')
     def get_participants_level(self, obj):

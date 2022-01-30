@@ -153,7 +153,7 @@ def install_first_week_job(context, student, chat_id):
         )
     context.job_queue.run_once(
         send_notification,
-        when=15,
+        when=60,
         context={'chat_id': chat_id, 'student': student},
         name=f'{context.user_data["username"]} notification'
     )

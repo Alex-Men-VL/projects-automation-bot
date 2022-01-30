@@ -4,7 +4,8 @@ from django.db import models
 class User(models.Model):
     name = models.CharField(
         'имя',
-        max_length=20
+        max_length=20,
+        db_index=True
     )
     tg_username = models.CharField(
         'ник в Telegram',
@@ -42,7 +43,7 @@ class Student(User):
     )
 
     class Meta:
-        verbose_name = 'ученик',
+        verbose_name = 'ученик'
         verbose_name_plural = 'ученики'
 
     def __str__(self):
@@ -56,7 +57,7 @@ class StudentLevel(models.Model):
     )
 
     class Meta:
-        verbose_name = 'уровень',
+        verbose_name = 'уровень'
         verbose_name_plural = 'уровни'
 
     def __str__(self):
@@ -66,7 +67,7 @@ class StudentLevel(models.Model):
 class ProductManager(User):
 
     class Meta:
-        verbose_name = 'продукт-менеджер',
+        verbose_name = 'продукт-менеджер'
         verbose_name_plural = 'продукт-менеджеры'
 
     def __str__(self):
@@ -85,7 +86,7 @@ class Time(models.Model):
     )
 
     class Meta:
-        verbose_name = 'промежуток времени',
+        verbose_name = 'промежуток времени'
         verbose_name_plural = 'промежутки времени'
         ordering = ('pm__name', 'time_interval')
 
@@ -126,7 +127,7 @@ class Project(models.Model):
     )
 
     class Meta:
-        verbose_name = 'проект',
+        verbose_name = 'проект'
         verbose_name_plural = 'проекты'
 
     def __str__(self):
@@ -163,7 +164,7 @@ class Participant(models.Model):
     )
 
     class Meta:
-        verbose_name = 'участник',
+        verbose_name = 'участник'
         verbose_name_plural = 'участники'
 
     def __str__(self):
@@ -195,7 +196,7 @@ class Team(models.Model):
     )
 
     class Meta:
-        verbose_name = 'команда',
+        verbose_name = 'команда'
         verbose_name_plural = 'команды'
         ordering = ('time__pm__name', 'time__time_interval')
 
