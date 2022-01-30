@@ -26,12 +26,13 @@ from .models import Participant, ProductManager, Project, Student
 from .tg_utils import (
     add_participant_in_team, add_participant_selected_times,
     get_time_intervals,
-    install_first_week_job, install_second_week_job, send_list_of_commands,
+    install_collect_teams_job, install_first_week_job, install_second_week_job,
+    send_list_of_commands,
     send_notification,
     send_poll_with_times
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('tg_bot')
 
 
 def get_user(func):
@@ -183,6 +184,7 @@ class TgBot:
 
 def start(update, context):
     install_second_week_job(context)
+    install_collect_teams_job(context)
 
     chat_id = update.message.chat_id
     if student := context.user_data.get('student'):

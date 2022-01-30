@@ -1,9 +1,10 @@
 from datetime import date, datetime, time, timedelta
 
 from django.db.models import Count
-from telegram import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 
 from . import static_text
+from .collect_teams import sort_and_create_teams
 from .models import Participant, ProductManager, Project, Student, Team, Time
 
 
@@ -136,7 +137,7 @@ def add_participant_in_team(participant, selected_interval, intervals):
 
 def install_first_week_job(context, student, chat_id):
     # Раскомментировать на продакшене
-    # start_first_week_job(context, chat_id, student)
+    # start_first_week_job(context, student)
 
     # Закомментировать на продакшене
     if not Participant.objects.filter(
@@ -249,4 +250,15 @@ def send_list_of_commands(context, pm):
         context.bot.send_message(
             context.user_data['chat_id'],
             static_text.admin_there_are_no_commands
+        )
+
+
+def install_collect_teams_job(context):
+    collect_job = context.job_queue.get_jobs_by_name('collect_teams')
+    if not collect_job:
+        context.job_queue.run_monthly(
+            sort_and_create_teams,
+            time(13, 0, 0),
+            day=17,
+            name='Задача формирования команд создана'
         )

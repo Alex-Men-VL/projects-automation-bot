@@ -1,7 +1,7 @@
 from telegram_bot.models import Participant, ProductManager, Project, Team, Time
 
 
-def sort_and_create_teams():
+def sort_and_create_teams(context=None):
     students = sort()  # sort() -> students = (junior, novice_plus, novice)
     for student_skill_group in students:
         groups = create_students_groups(student_skill_group)

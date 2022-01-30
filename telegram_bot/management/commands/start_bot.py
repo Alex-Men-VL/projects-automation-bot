@@ -13,6 +13,8 @@ from telegram_bot.tg_automation import (
     TgBot
 )
 
+logger = logging.getLogger('tg_bot')
+
 
 class Command(BaseCommand):
 
@@ -24,6 +26,8 @@ class Command(BaseCommand):
 
 
 def start_bot():
+    logging.basicConfig(level=logging.INFO)
+
     tg_token = settings.TELEGRAM_BOT_TOKEN
     bot = TgBot(
         tg_token,
