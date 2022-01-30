@@ -61,9 +61,9 @@ poll_question_with_zero_option = '''К сожалению, доступных в
 
 team_info = '''Команда №{number}
 Участники: 
-    Первый: {first_pt} - @{first_tg}
-    Второй: {second_pt} - @{second_tg}
-    Третий: {third_pm} - @{third_tg}
+    {first_pt} - @{first_tg}
+    {second_pt} - @{second_tg}
+    {third_pm} - @{third_tg}
 Время: {team_time}
 Ссылка на Trello: {trello_link}
 '''
