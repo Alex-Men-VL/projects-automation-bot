@@ -189,14 +189,16 @@ def start(update, context):
     chat_id = update.message.chat_id
     if student := context.user_data.get('student'):
         message = static_text.start_message.format(
-            name=student.name
+            name=student.name.split()[0]
         )
         context.bot.send_message(chat_id, message,
                                  reply_markup=ReplyKeyboardRemove())
         install_first_week_job(context, student, chat_id)
         return 'HANDLE_POLL'
     elif pm := context.user_data.get('pm'):
-        message = static_text.admin_message.format(name=pm.name)
+        message = static_text.admin_message.format(
+            name=pm.name.split()[0]
+        )
         context.bot.send_message(
             context.user_data['chat_id'],
             message
